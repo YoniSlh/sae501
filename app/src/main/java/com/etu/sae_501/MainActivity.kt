@@ -15,19 +15,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import android.provider.MediaStore
-import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.material3.FilledTonalButton
 
 class MainActivity : ComponentActivity() {
-    // Enregistrement du résultat de l'activité pour la capture d'image
-    private val getResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    // Enregistrement du résultat pour la capture d'image
+    private val getPhotoResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val imageBitmap = result.data?.extras?.get("data") as? Bitmap
             // Traiter l'image ici...
+        }
+    }
+
+    // Enregistrement du résultat pour le choix de la photo
+    private val pickPhotoResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val imageUri: Uri? = result.data?.data
+            // Traiter l'URI de l'image ici...
         }
     }
 
@@ -39,9 +48,17 @@ class MainActivity : ComponentActivity() {
                 onTakePhotoClick = {
                     val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
                     try {
-                        getResult.launch(takePictureIntent)
+                        getPhotoResult.launch(takePictureIntent)
                     } catch (e: ActivityNotFoundException) {
                         Toast.makeText(this, "Erreur lors du démarrage de la caméra : " + e.localizedMessage, Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onChoosePhotoClick = {
+                    val choosePhotoIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                    try {
+                        pickPhotoResult.launch(choosePhotoIntent)
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(this, "Erreur lors du choix de la photo : " + e.localizedMessage, Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -57,7 +74,14 @@ fun takePhotoButton(onClick: () -> Unit) {
 }
 
 @Composable
-fun MyScreen(onTakePhotoClick: () -> Unit) {
+fun choosePhotoButton(onClick: () -> Unit) {
+    FilledTonalButton(onClick = { onClick() }) {
+        Text("Choisir une photo")
+    }
+}
+
+@Composable
+fun MyScreen(onTakePhotoClick: () -> Unit, onChoosePhotoClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -66,5 +90,6 @@ fun MyScreen(onTakePhotoClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         takePhotoButton(onClick = onTakePhotoClick)
+        choosePhotoButton(onClick = onChoosePhotoClick)
     }
 }
