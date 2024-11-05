@@ -1,6 +1,7 @@
 package com.etu.sae_501
 
 import android.content.ActivityNotFoundException
+import androidx.compose.foundation.layout.Box
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,7 +22,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     // Enregistrement du résultat pour la capture d'image
@@ -67,6 +75,21 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+fun TitleText() {
+    Text(
+        "Capturez une image ou importez-en une pour identifier des objets en temps réel",
+        fontSize = 22.sp,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 40.dp)
+            .widthIn(max = 300.dp)
+    )
+}
+
+
+
+@Composable
 fun takePhotoButton(onClick: () -> Unit) {
     Button(onClick = { onClick() }) {
         Text("Prendre une photo")
@@ -82,14 +105,28 @@ fun choosePhotoButton(onClick: () -> Unit) {
 
 @Composable
 fun MyScreen(onTakePhotoClick: () -> Unit, onChoosePhotoClick: () -> Unit) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp), // padding for the overall content
+        contentAlignment = Alignment.Center // centers content inside the Box
     ) {
-        takePhotoButton(onClick = onTakePhotoClick)
-        choosePhotoButton(onClick = onChoosePhotoClick)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            TitleText()
+
+            Spacer(modifier = Modifier.height(24.dp)) // space between title and buttons
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp), // space between buttons
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                choosePhotoButton(onClick = onChoosePhotoClick)
+                takePhotoButton(onClick = onTakePhotoClick)
+            }
+        }
     }
 }
+
