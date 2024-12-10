@@ -25,33 +25,28 @@ import androidx.compose.ui.unit.sp
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
+import org.pytorch.torchvision.TensorImageUtils
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.exp
 
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
 
     val model = try {
-        Module.load(assetFilePath(context, "signatrix_efficientdet_coco.pt"))
+        val loadedModel = Module.load(assetFilePath(context, "Model_drink3.pt"))
+        loadedModel
     } catch (e: Exception) {
-        Toast.makeText(context, "Erreur de chargement du modèle : ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+        print(e.localizedMessage)
+        Toast.makeText(context, e.localizedMessage, Toast.LENGTH_LONG).show()
         null
     }
 
-    fun preprocessImage(bitmap: Bitmap): FloatArray {
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
-        val floatArray = FloatArray(3 * 224 * 224)
-        var index = 0
-        for (y in 0 until resizedBitmap.height) {
-            for (x in 0 until resizedBitmap.width) {
-                val pixel = resizedBitmap.getPixel(x, y)
-                floatArray[index++] = (Color.red(pixel) / 255.0f - 0.485f) / 0.229f
-                floatArray[index++] = (Color.green(pixel) / 255.0f - 0.456f) / 0.224f
-                floatArray[index++] = (Color.blue(pixel) / 255.0f - 0.406f) / 0.225f
-            }
-        }
-        return floatArray
+    fun softmax(scores: FloatArray): FloatArray {
+        val expScores = scores.map { exp(it.toDouble()) }
+        val sumExpScores = expScores.sum()
+        return expScores.map { (it / sumExpScores).toFloat() }.toFloatArray()
     }
 
     fun processImage(bitmap: Bitmap) {
@@ -60,15 +55,23 @@ fun HomeScreen() {
             return
         }
 
-        val inputTensor = Tensor.fromBlob(preprocessImage(bitmap), longArrayOf(1, 3, 224, 224))
-        val outputTensor = model.forward(IValue.from(inputTensor)).toTensor()
-        val scores = outputTensor.dataAsFloatArray
+        try {
+            val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(bitmap, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_STD_RGB)
 
-        val labels = listOf("soda", "eau", "alcool")
-        val maxIndex = scores.indices.maxByOrNull { scores[it] } ?: -1
-        val predictedLabel = if (maxIndex >= 0) labels[maxIndex] else "Inconnu"
+            val outputTensor = model.forward(IValue.from(inputTensor)).toTensor()
+            val scores = outputTensor.dataAsFloatArray
 
-        Toast.makeText(context, "Objet détecté : $predictedLabel", Toast.LENGTH_SHORT).show()
+            val probabilities = softmax(scores)
+
+            val labels = listOf("alcool", "eau", "soda")
+            val maxIndex = probabilities.indices.maxByOrNull { probabilities[it] } ?: -1
+            val predictedLabel = if (maxIndex >= 0) labels[maxIndex] else "Inconnu"
+            val confidence = if (maxIndex >= 0) probabilities[maxIndex] * 100 else 0.0
+
+            Toast.makeText(context, "Objet détecté : $predictedLabel avec une confiance de ${"%.2f".format(confidence)}%", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Erreur lors du traitement de l'image : ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     val getPhotoResult = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -94,7 +97,6 @@ fun HomeScreen() {
         }
     }
 
-    // UI de la page
     Box(
         modifier = Modifier
             .fillMaxSize()
