@@ -1,14 +1,18 @@
 package com.etu.sae_501.navigation
 
+import android.graphics.drawable.Icon
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -18,17 +22,25 @@ import androidx.navigation.compose.rememberNavController
 import com.etu.sae_501.screens.SavedScreen
 import com.etu.sae_501.screens.HistoryScreen
 import com.etu.sae_501.screens.HomeScreen
-
+import com.etu.sae_501.viewmodel.HistoryViewModel
+import com.etu.sae_501.repository.ScannedObjectRepository
+import com.etu.sae_501.data.database.DatabaseProvider
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    Scaffold (
+    // Récupère le Dao via DatabaseProvider
+    val context = LocalContext.current
+    val dao = remember { DatabaseProvider.getDatabase(context).scannedObjectDao() }
+    val repository = remember { ScannedObjectRepository(dao) }
+    val historyViewModel = remember { HistoryViewModel(repository) }
+
+    Scaffold(
         bottomBar = {
             NavigationBar {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination  = navBackStackEntry?.destination
+                val currentDestination = navBackStackEntry?.destination
 
                 listOfNavItems.forEach { navItem ->
                     NavigationBarItem(
@@ -45,7 +57,7 @@ fun AppNavigation() {
                         icon = {
                             Icon(
                                 imageVector = navItem.icon,
-                                contentDescription = null
+                                contentDescription = navItem.label
                             )
                         },
                         label = {
@@ -55,12 +67,11 @@ fun AppNavigation() {
                 }
             }
         }
-    ) {
-        paddingValues -> NavHost(
+    ) { paddingValues ->
+        NavHost(
             navController = navController,
             startDestination = Screens.HomeScreen.name,
-            modifier = Modifier
-                .padding(paddingValues)
+            modifier = Modifier.padding(paddingValues)
         ) {
             composable(Screens.HomeScreen.name) {
                 HomeScreen()
@@ -71,6 +82,6 @@ fun AppNavigation() {
             composable(Screens.SavedScreen.name) {
                 SavedScreen()
             }
-    }
+        }
     }
 }

@@ -11,16 +11,24 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.etu.sae_501.data.database.DatabaseProvider
+import com.etu.sae_501.data.model.ScannedObject
+import com.etu.sae_501.repository.ScannedObjectRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.torchvision.TensorImageUtils
@@ -64,7 +72,20 @@ fun HomeScreen() {
             val labels = listOf("alcool", "eau", "soda")
             val maxIndex = probabilities.indices.maxByOrNull { probabilities[it] } ?: -1
             val predictedLabel = if (maxIndex >= 0) labels[maxIndex] else "Inconnu"
-            val confidence = if (maxIndex >= 0) probabilities[maxIndex] * 100 else 0.0
+            val confidence = if (maxIndex >= 0) probabilities[maxIndex] * 100 else 0.0f
+
+            // Ajouter l'objet scanné à l'historique
+            val scannedObject = ScannedObject(
+                name = predictedLabel,
+                confidence = confidence,
+                timestamp = System.currentTimeMillis()
+            )
+
+            // Insérer l'objet dans la base de données
+            val repository = ScannedObjectRepository(DatabaseProvider.getDatabase(context).scannedObjectDao())
+            CoroutineScope(Dispatchers.IO).launch {
+                repository.insertObject(scannedObject)
+            }
 
             Toast.makeText(context, "Objet détecté : $predictedLabel avec une confiance de ${"%.2f".format(confidence)}%", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
@@ -139,9 +160,10 @@ fun HomeScreen() {
                     Text("Prendre une photo")
                 }
             }
+
+            }
         }
     }
-}
 
 @Composable
 fun TitleText() {
