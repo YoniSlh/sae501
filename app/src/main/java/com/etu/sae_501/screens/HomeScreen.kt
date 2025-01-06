@@ -98,6 +98,15 @@ fun drawBoundingBox(originalBitmap: Bitmap, detectionResult: DetectionResult): B
     return mutable
 }
 
+fun saveBitmapToFile(context: Context, bitmap: Bitmap): String {
+    val fileName = "scanned_${System.currentTimeMillis()}.jpg"
+    val file = File(context.filesDir, fileName)
+    FileOutputStream(file).use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+    }
+    return file.absolutePath
+}
+
 fun processImage(bitmap: Bitmap, context: Context, model: Module?): Pair<Bitmap, DetectionResult>? {
     if (model == null) {
         Toast.makeText(context, "Modèle non chargé.", Toast.LENGTH_SHORT).show()
@@ -129,18 +138,23 @@ fun processImage(bitmap: Bitmap, context: Context, model: Module?): Pair<Bitmap,
         val result = DetectionResult(predictedLabel, confidence, left, top, right, bottom)
         val processedBitmap = drawBoundingBox(bitmap, result)
 
-        // Ajouter l'objet scanné à l'historique
+    // Sauvegarder la photo localement
+        val imagePath = saveBitmapToFile(context, processedBitmap)
+
+    // Créer un objet scanné avec le chemin de l'image
         val scannedObject = ScannedObject(
             name = predictedLabel,
             confidence = confidence,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            imagePath = imagePath
         )
 
-        // Insérer l'objet dans la base de données
+    // Insérer l'objet dans la base de données
         val repository = ScannedObjectRepository(DatabaseProvider.getDatabase(context).scannedObjectDao())
         CoroutineScope(Dispatchers.IO).launch {
             repository.insertObject(scannedObject)
         }
+
 
         Toast.makeText(
             context,

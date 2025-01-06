@@ -10,6 +10,7 @@ data class ScannedObject(
     val confidence: Float,
     val timestamp: Long,
     val description: String = "undefined", // Nouvelle colonne
-    val anotherColumn: String? = null // Nouvelle colonne
+    val anotherColumn: String? = null, // Nouvelle colonne
+    val imagePath: String?
 )
 

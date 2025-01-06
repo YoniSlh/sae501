@@ -24,7 +24,8 @@ import com.etu.sae_501.data.database.DatabaseProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +91,7 @@ fun HistoryScreen() {
             } else {
                 filteredItems.forEach { item ->
                     HistoriqueItem(
-                        iconRes = android.R.drawable.ic_menu_gallery, // Placeholder icon
+                        imagePath = item.imagePath,
                         title = item.name,
                         subtitle = "Date de scan: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))}",
                         progress = item.confidence.toInt(),
@@ -106,6 +107,7 @@ fun HistoryScreen() {
                         }
                     )
                 }
+
             }
         }
     }
@@ -143,7 +145,7 @@ fun FilterBar(
 
 @Composable
 fun HistoriqueItem(
-    iconRes: Int,
+    imagePath: String?,
     title: String,
     subtitle: String,
     progress: Int,
@@ -165,13 +167,29 @@ fun HistoriqueItem(
             .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = iconRes),
-            contentDescription = null,
-            modifier = Modifier
-                .size(48.dp)
-                .padding(8.dp)
-        )
+        // Afficher l'image si elle est disponible, sinon un placeholder
+        if (imagePath != null) {
+            val bitmap = BitmapFactory.decodeFile(imagePath)
+            bitmap?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .padding(8.dp)
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color.Gray, shape = CircleShape)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("N/A", color = Color.White, fontSize = 12.sp)
+            }
+        }
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -219,3 +237,4 @@ fun HistoriqueItem(
         }
     }
 }
+
