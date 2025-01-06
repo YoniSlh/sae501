@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen() {
@@ -35,14 +36,17 @@ fun HistoryScreen() {
     val database = DatabaseProvider.getDatabase(context)
     val scannedObjectDao = database.scannedObjectDao()
 
-    // Liste des objets scannés
+    // Liste complète des objets scannés
     var historyItems by remember { mutableStateOf<List<ScannedObject>>(emptyList()) }
+
+    // Filtre sélectionné
+    var selectedFilter by remember { mutableStateOf<List<String>>(emptyList()) }
 
     // Récupérer les objets scannés depuis la base de données
     LaunchedEffect(true) {
         coroutineScope.launch {
             scannedObjectDao.getAllObjects().collect { objects ->
-                historyItems = objects
+                historyItems = objects.sortedByDescending { it.timestamp } // Trier par date
             }
         }
     }
@@ -60,27 +64,82 @@ fun HistoryScreen() {
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
-            historyItems.forEach { item ->
-                HistoriqueItem(
-                    iconRes = android.R.drawable.ic_menu_gallery, // Placeholder icon
-                    title = item.name,
-                    subtitle = "Date de scan: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))}",
-                    progress = item.confidence.toInt(),
-                    onClick = {
-                        Toast.makeText(context, "Clicked: ${item.name}", Toast.LENGTH_SHORT).show()
-                    },
-                    onDelete = {
-                        coroutineScope.launch {
-                            withContext(Dispatchers.IO) {
-                                scannedObjectDao.deleteObject(item)
+            // Barre de filtres
+            FilterBar(
+                selectedFilter = selectedFilter,
+                onFilterChange = { newFilter ->
+                    selectedFilter = newFilter
+                }
+            )
+
+            // Afficher les éléments filtrés
+            val filteredItems = historyItems.filter { item ->
+                if (selectedFilter.isEmpty()) {
+                    true // Aucun filtre, afficher tout
+                } else {
+                    selectedFilter.any { filter -> item.name.contains(filter, ignoreCase = true) }
+                }
+            }
+
+            if (filteredItems.isEmpty()) {
+                Text(
+                    text = "Aucun élément trouvé.",
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    color = Color.Gray
+                )
+            } else {
+                filteredItems.forEach { item ->
+                    HistoriqueItem(
+                        iconRes = android.R.drawable.ic_menu_gallery, // Placeholder icon
+                        title = item.name,
+                        subtitle = "Date de scan: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))}",
+                        progress = item.confidence.toInt(),
+                        onClick = {
+                            Toast.makeText(context, "Clicked: ${item.name}", Toast.LENGTH_SHORT).show()
+                        },
+                        onDelete = {
+                            coroutineScope.launch {
+                                withContext(Dispatchers.IO) {
+                                    scannedObjectDao.deleteObject(item)
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
 }
+
+@Composable
+fun FilterBar(
+    selectedFilter: List<String>,
+    onFilterChange: (List<String>) -> Unit
+) {
+    val filters = listOf("Alcool", "Soda", "Eau") // Liste des filtres disponibles
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        filters.forEach { filter ->
+            FilterChip(
+                selected = selectedFilter.contains(filter),
+                onClick = {
+                    val newFilter = if (selectedFilter.contains(filter)) {
+                        selectedFilter - filter // Supprimer le filtre si déjà sélectionné
+                    } else {
+                        selectedFilter + filter // Ajouter le filtre sinon
+                    }
+                    onFilterChange(newFilter)
+                },
+                label = { Text(filter) }
+            )
+        }
+    }
+}
+
 
 @Composable
 fun HistoriqueItem(
