@@ -17,4 +17,8 @@ class ScannedObjectRepository(private val dao: ScannedObjectDao) {
     suspend fun deleteObject(scannedObject: ScannedObject) {
         dao.deleteObject(scannedObject)
     }
+
+    suspend fun getScannedObjectById(id: Long): ScannedObject? {
+        return dao.getScannedObjectById(id)
+    }
 }

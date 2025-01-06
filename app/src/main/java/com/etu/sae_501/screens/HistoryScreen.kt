@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -26,10 +25,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.navigation.NavController
+import com.etu.sae_501.navigation.Screens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen() {
+fun HistoryScreen(navController: NavController) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -96,7 +97,7 @@ fun HistoryScreen() {
                         subtitle = "Date de scan: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))}",
                         progress = item.confidence.toInt(),
                         onClick = {
-                            Toast.makeText(context, "Clicked: ${item.name}", Toast.LENGTH_SHORT).show()
+                            navController.navigate("${Screens.DetailScreen.name}/${item.id}")
                         },
                         onDelete = {
                             coroutineScope.launch {

@@ -14,4 +14,7 @@ interface ScannedObjectDao {
 
     @Delete
     suspend fun deleteObject(scannedObject: ScannedObject)
+
+    @Query("SELECT * FROM scanned_objects WHERE id = :id LIMIT 1")
+    suspend fun getScannedObjectById(id: Long): ScannedObject?
 }
