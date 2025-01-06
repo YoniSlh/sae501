@@ -120,6 +120,7 @@ fun processImage(bitmap: Bitmap, context: Context, model: Module?): Pair<Bitmap,
         val predictedLabel = if (maxIndex >= 0) labels[maxIndex] else "Inconnu"
         val confidence = if (maxIndex >= 0) probabilities[maxIndex] * 100 else 0.0f
 
+        // à changer par valeurs de la boisson dans l'image
         val left = 0.6f
         val top = 0.6f
         val right = 0.9f
