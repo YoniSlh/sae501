@@ -194,11 +194,14 @@ fun HomeScreen() {
             val imageUri: Uri? = result.data?.data
             if (imageUri != null) {
                 try {
-                    val source = ImageDecoder.createSource(context.contentResolver, imageUri)
-                    val bitmap = ImageDecoder.decodeBitmap(source)
-                    processImage(bitmap, context, model)?.let { (processedBitmap, result) ->
-                        capturedBitmap = processedBitmap
-                        detectionResult = result
+                    val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)?.let {
+                        Bitmap.createScaledBitmap(it, 512, 512, true)
+                    }
+                    if (bitmap != null) {
+                        processImage(bitmap, context, model)?.let { (processedBitmap, result) ->
+                            capturedBitmap = processedBitmap
+                            detectionResult = result
+                        }
                     }
                 } catch (e: Exception) {
                     Toast.makeText(
@@ -207,8 +210,6 @@ fun HomeScreen() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-            } else {
-                Toast.makeText(context, "Erreur : aucune image sélectionnée.", Toast.LENGTH_SHORT).show()
             }
         }
     }
