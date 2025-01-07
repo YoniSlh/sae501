@@ -24,6 +24,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.graphics.BitmapFactory
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.navigation.NavController
 import com.etu.sae_501.navigation.Screens
@@ -43,6 +45,7 @@ fun HistoryScreen(navController: NavController) {
 
     // Filtre sélectionné
     var selectedFilter by remember { mutableStateOf<List<String>>(emptyList()) }
+    var showFavoritesOnly by remember { mutableStateOf(false) }
 
     // Récupérer les objets scannés depuis la base de données
     LaunchedEffect(true) {
@@ -69,18 +72,22 @@ fun HistoryScreen(navController: NavController) {
             // Barre de filtres
             FilterBar(
                 selectedFilter = selectedFilter,
+                showFavoritesOnly = showFavoritesOnly,
                 onFilterChange = { newFilter ->
                     selectedFilter = newFilter
+                },
+                onFavoritesToggle = { showFavorites ->
+                    showFavoritesOnly = showFavorites
                 }
             )
 
-            // Afficher les éléments filtrés
+            // Appliquer les filtres
             val filteredItems = historyItems.filter { item ->
-                if (selectedFilter.isEmpty()) {
-                    true // Aucun filtre, afficher tout
-                } else {
-                    selectedFilter.any { filter -> item.name.contains(filter, ignoreCase = true) }
+                val matchesType = if (selectedFilter.isEmpty()) true else selectedFilter.any { filter ->
+                    item.name.contains(filter, ignoreCase = true)
                 }
+                val matchesFavorites = if (showFavoritesOnly) item.isFavorite else true
+                matchesType && matchesFavorites
             }
 
             if (filteredItems.isEmpty()) {
@@ -96,6 +103,7 @@ fun HistoryScreen(navController: NavController) {
                         title = item.name,
                         subtitle = "Date de scan: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))}",
                         progress = item.confidence.toInt(),
+                        isFavorited = item.isFavorite, // Passer l'état favori
                         onClick = {
                             navController.navigate("${Screens.DetailScreen.name}/${item.id}")
                         },
@@ -105,10 +113,18 @@ fun HistoryScreen(navController: NavController) {
                                     scannedObjectDao.deleteObject(item)
                                 }
                             }
+                        },
+                        onFavoriteToggle = {
+                            // Mettre à jour l'état favori dans la base de données
+                            coroutineScope.launch {
+                                withContext(Dispatchers.IO) {
+                                    item.isFavorite = !item.isFavorite
+                                    scannedObjectDao.updateObject(item) // Mettre à jour l'objet
+                                }
+                            }
                         }
                     )
                 }
-
             }
         }
     }
@@ -117,7 +133,9 @@ fun HistoryScreen(navController: NavController) {
 @Composable
 fun FilterBar(
     selectedFilter: List<String>,
-    onFilterChange: (List<String>) -> Unit
+    showFavoritesOnly: Boolean,
+    onFilterChange: (List<String>) -> Unit,
+    onFavoritesToggle: (Boolean) -> Unit
 ) {
     val filters = listOf("Alcool", "Soda", "Eau") // Liste des filtres disponibles
     Row(
@@ -140,9 +158,13 @@ fun FilterBar(
                 label = { Text(filter) }
             )
         }
+        FilterChip(
+            selected = showFavoritesOnly,
+            onClick = { onFavoritesToggle(!showFavoritesOnly) },
+            label = { Text("Favoris") }
+        )
     }
 }
-
 
 @Composable
 fun HistoriqueItem(
@@ -150,8 +172,10 @@ fun HistoriqueItem(
     title: String,
     subtitle: String,
     progress: Int,
+    isFavorited: Boolean,
     onClick: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onFavoriteToggle: () -> Unit
 ) {
     val progressColor = when {
         progress < 20 -> Color.Red
@@ -160,6 +184,8 @@ fun HistoriqueItem(
     }
 
     var expanded by remember { mutableStateOf(false) }
+
+    var isCurrentlyFavorited by remember { mutableStateOf(isFavorited) }
 
     Row(
         modifier = Modifier
@@ -219,6 +245,20 @@ fun HistoriqueItem(
             Text(text = subtitle, fontSize = 14.sp, color = Color.Gray)
         }
 
+        // Bouton de favoris
+        IconButton(onClick = {
+            // Mettre à jour localement avant de toucher la base de données
+            isCurrentlyFavorited = !isCurrentlyFavorited
+            onFavoriteToggle()  // Met à jour la base de données avec l'état actuel
+        }) {
+            Icon(
+                imageVector = if (isCurrentlyFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                contentDescription = if (isCurrentlyFavorited) "Retirer des favoris" else "Ajouter aux favoris",
+                tint = if (isCurrentlyFavorited) Color.Red else Color.Gray
+            )
+        }
+
+        // Bouton pour afficher les options supplémentaires
         IconButton(onClick = { expanded = true }) {
             Icon(Icons.Default.MoreVert, contentDescription = "Options")
         }
@@ -238,4 +278,3 @@ fun HistoriqueItem(
         }
     }
 }
-

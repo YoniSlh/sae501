@@ -18,7 +18,19 @@ class ScannedObjectRepository(private val dao: ScannedObjectDao) {
         dao.deleteObject(scannedObject)
     }
 
+    suspend fun updateObject(scannedObject: ScannedObject) {
+        dao.updateObject(scannedObject)
+    }
+
     suspend fun getScannedObjectById(id: Long): ScannedObject? {
         return dao.getScannedObjectById(id)
+    }
+
+    suspend fun updateFavoriteStatus(id: Long, newState: Boolean) {
+        return dao.updateFavoriteStatus(id, newState);
+    }
+
+    fun getFavoriteItems(): Flow<List<ScannedObject>> {
+        return dao.getFavoriteItems()
     }
 }

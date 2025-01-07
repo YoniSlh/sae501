@@ -12,9 +12,19 @@ interface ScannedObjectDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertObject(scannedObject: ScannedObject)
 
+    @Update
+    suspend fun updateObject(scannedObject: ScannedObject)
+
     @Delete
     suspend fun deleteObject(scannedObject: ScannedObject)
 
     @Query("SELECT * FROM scanned_objects WHERE id = :id LIMIT 1")
     suspend fun getScannedObjectById(id: Long): ScannedObject?
+
+    @Query("UPDATE scanned_objects SET isFavorite = :isFavorite WHERE id = :id")
+    suspend fun updateFavoriteStatus(id: Long, isFavorite: Boolean)
+
+    @Query("SELECT * FROM scanned_objects WHERE isFavorite = 1")
+    fun getFavoriteItems(): Flow<List<ScannedObject>>
+
 }

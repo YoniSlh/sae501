@@ -24,10 +24,4 @@ val listOfNavItems = listOf(
         icon = Icons.Default.DateRange,
         route = Screens.HistoryScreen.name
     ),
-    NavItem(
-        label = "Sauvegardés",
-        icon = Icons.Default.Star,
-        route = Screens.SavedScreen.name
-
-    )
 )

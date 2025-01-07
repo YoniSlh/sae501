@@ -24,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Divider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 
@@ -44,9 +46,12 @@ fun DetailScreen(
     confidence: Float,
     historyItems: List<HistoryItem>,
     imagePath: String?,
+    isFavorite: Boolean, // Indique si l'objet est favori
     onBackClick: () -> Unit,
-    onBookmarkClick: () -> Unit
+    onBookmarkClick: (Boolean) -> Unit // Action à exécuter quand favoris change
 ) {
+    val favoriteState = remember { mutableStateOf(isFavorite) } // État local
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -61,10 +66,22 @@ fun DetailScreen(
                 Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
             }
 
-            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
 
-            IconButton(onClick = onBookmarkClick) {
-                Icon(Icons.Default.FavoriteBorder, contentDescription = "Favoris")
+            IconButton(onClick = {
+                favoriteState.value = !favoriteState.value // Inverse l'état local
+                onBookmarkClick(favoriteState.value) // Informe le parent du changement
+            }) {
+                Icon(
+                    imageVector = if (favoriteState.value) Icons.Default.FavoriteBorder else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favoris",
+                    tint = if (favoriteState.value) Color.Red else Color.Gray
+                )
             }
         }
 
@@ -105,13 +122,10 @@ fun DetailScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-
-        Text("Confience", style = MaterialTheme.typography.titleLarge)
+        Text("Confiance", style = MaterialTheme.typography.titleLarge)
         Text(confidence.toInt().toString() + " %", style = MaterialTheme.typography.titleMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
-
-//        Text("Historique de cet objet", style = MaterialTheme.typography.titleLarge)
 
         LazyColumn {
             items(historyItems) { item ->
@@ -127,3 +141,5 @@ fun DetailScreen(
         }
     }
 }
+
+

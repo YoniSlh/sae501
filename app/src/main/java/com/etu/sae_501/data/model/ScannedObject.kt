@@ -9,8 +9,10 @@ data class ScannedObject(
     val name: String,
     val confidence: Float,
     val timestamp: Long,
-    val description: String = "undefined", // Nouvelle colonne
-    val anotherColumn: String? = null, // Nouvelle colonne
-    val imagePath: String?
+    val description: String = "undefined",
+    val anotherColumn: String? = null,
+    val imagePath: String?,
+    var isFavorite: Boolean = false
 )
+
 
