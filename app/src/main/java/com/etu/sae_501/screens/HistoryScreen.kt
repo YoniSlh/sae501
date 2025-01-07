@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.navigation.NavController
 import com.etu.sae_501.navigation.Screens
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(navController: NavController) {
@@ -103,7 +102,7 @@ fun HistoryScreen(navController: NavController) {
                         title = item.name,
                         subtitle = "Date de scan: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))}",
                         progress = item.confidence.toInt(),
-                        isFavorited = item.isFavorite, // Passer l'état favori
+                        isFavorite = item.isFavorite, // Passer l'état favori
                         onClick = {
                             navController.navigate("${Screens.DetailScreen.name}/${item.id}")
                         },
@@ -119,7 +118,7 @@ fun HistoryScreen(navController: NavController) {
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
                                     item.isFavorite = !item.isFavorite
-                                    scannedObjectDao.updateObject(item) // Mettre à jour l'objet
+                                    scannedObjectDao.updateObject(item) // Met à jour l'objet
                                 }
                             }
                         }
@@ -172,7 +171,7 @@ fun HistoriqueItem(
     title: String,
     subtitle: String,
     progress: Int,
-    isFavorited: Boolean,
+    isFavorite: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     onFavoriteToggle: () -> Unit
@@ -185,7 +184,8 @@ fun HistoriqueItem(
 
     var expanded by remember { mutableStateOf(false) }
 
-    var isCurrentlyFavorited by remember { mutableStateOf(isFavorited) }
+    // Utiliser un état local pour gérer l'état des favoris
+    var isCurrentlyFavorited by remember { mutableStateOf(isFavorite) }
 
     Row(
         modifier = Modifier

@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Divider
@@ -78,7 +79,7 @@ fun DetailScreen(
                 onBookmarkClick(favoriteState.value) // Informe le parent du changement
             }) {
                 Icon(
-                    imageVector = if (favoriteState.value) Icons.Default.FavoriteBorder else Icons.Default.FavoriteBorder,
+                    imageVector = if (favoriteState.value) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = "Favoris",
                     tint = if (favoriteState.value) Color.Red else Color.Gray
                 )
@@ -141,5 +142,6 @@ fun DetailScreen(
         }
     }
 }
+
 
 
