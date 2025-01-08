@@ -106,7 +106,7 @@ fun HistoryScreen(navController: NavController) {
                     items(filteredItems) { item ->
                         HistoriqueItem(
                             imagePath = item.imagePath,
-                            title = item.name,
+                            title = item.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
                             subtitle = "Date de scan: ${
                                 java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))
                             }",
