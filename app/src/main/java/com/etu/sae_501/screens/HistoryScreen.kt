@@ -24,11 +24,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.navigation.NavController
 import com.etu.sae_501.navigation.Screens
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(navController: NavController) {
@@ -96,33 +99,39 @@ fun HistoryScreen(navController: NavController) {
                     color = Color.Gray
                 )
             } else {
-                filteredItems.forEach { item ->
-                    HistoriqueItem(
-                        imagePath = item.imagePath,
-                        title = item.name,
-                        subtitle = "Date de scan: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))}",
-                        progress = item.confidence.toInt(),
-                        isFavorite = item.isFavorite, // Passer l'état favori
-                        onClick = {
-                            navController.navigate("${Screens.DetailScreen.name}/${item.id}")
-                        },
-                        onDelete = {
-                            coroutineScope.launch {
-                                withContext(Dispatchers.IO) {
-                                    scannedObjectDao.deleteObject(item)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredItems) { item ->
+                        HistoriqueItem(
+                            imagePath = item.imagePath,
+                            title = item.name,
+                            subtitle = "Date de scan: ${
+                                java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(item.timestamp))
+                            }",
+                            progress = item.confidence.toInt(),
+                            isFavorite = item.isFavorite,
+                            onClick = {
+                                navController.navigate("${Screens.DetailScreen.name}/${item.id}")
+                            },
+                            onDelete = {
+                                coroutineScope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        scannedObjectDao.deleteObject(item)
+                                    }
+                                }
+                            },
+                            onFavoriteToggle = {
+                                coroutineScope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        item.isFavorite = !item.isFavorite
+                                        scannedObjectDao.updateObject(item)
+                                    }
                                 }
                             }
-                        },
-                        onFavoriteToggle = {
-                            // Mettre à jour l'état favori dans la base de données
-                            coroutineScope.launch {
-                                withContext(Dispatchers.IO) {
-                                    item.isFavorite = !item.isFavorite
-                                    scannedObjectDao.updateObject(item) // Met à jour l'objet
-                                }
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -184,7 +193,6 @@ fun HistoriqueItem(
 
     var expanded by remember { mutableStateOf(false) }
 
-    // Utiliser un état local pour gérer l'état des favoris
     var isCurrentlyFavorited by remember { mutableStateOf(isFavorite) }
 
     Row(
@@ -245,20 +253,17 @@ fun HistoriqueItem(
             Text(text = subtitle, fontSize = 14.sp, color = Color.Gray)
         }
 
-        // Bouton de favoris
         IconButton(onClick = {
-            // Mettre à jour localement avant de toucher la base de données
             isCurrentlyFavorited = !isCurrentlyFavorited
-            onFavoriteToggle()  // Met à jour la base de données avec l'état actuel
+            onFavoriteToggle()
         }) {
             Icon(
                 imageVector = if (isCurrentlyFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                contentDescription = if (isCurrentlyFavorited) "Retirer des favoris" else "Ajouter aux favoris",
+                contentDescription = null,
                 tint = if (isCurrentlyFavorited) Color.Red else Color.Gray
             )
         }
 
-        // Bouton pour afficher les options supplémentaires
         IconButton(onClick = { expanded = true }) {
             Icon(Icons.Default.MoreVert, contentDescription = "Options")
         }
