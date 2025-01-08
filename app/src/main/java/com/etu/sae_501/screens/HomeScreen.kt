@@ -126,19 +126,17 @@ fun processImage(bitmap: Bitmap, context: Context, model: Module?): Pair<Bitmap,
         val predictedLabel = if (maxIndex >= 0) labels[maxIndex] else "Inconnu"
         val confidence = if (maxIndex >= 0) probabilities[maxIndex] * 100 else 0.0f
 
-        // à changer par valeurs de la boisson dans l'image
-        val left = 0.6f
-        val top = 0.6f
-        val right = 0.9f
-        val bottom = 0.9f
+        // Coordonnées du carré dessiné à changer par les valeurs d'EfficientDet
+        val left = 0.3f
+        val top = 0.9f
+        val right = 0.7f
+        val bottom = 0.1f
 
         val result = DetectionResult(predictedLabel, confidence, left, top, right, bottom)
         val processedBitmap = drawBoundingBox(bitmap, result)
 
-    // Sauvegarder la photo localement
         val imagePath = saveBitmapToFile(context, processedBitmap)
 
-    // Créer un objet scanné avec le chemin de l'image
         val scannedObject = ScannedObject(
             name = predictedLabel,
             confidence = confidence,
@@ -146,12 +144,11 @@ fun processImage(bitmap: Bitmap, context: Context, model: Module?): Pair<Bitmap,
             imagePath = imagePath
         )
 
-    // Insérer l'objet dans la base de données
+        // Insére l'objet dans la base de données
         val repository = ScannedObjectRepository(DatabaseProvider.getDatabase(context).scannedObjectDao())
         CoroutineScope(Dispatchers.IO).launch {
             repository.insertObject(scannedObject)
         }
-
 
         Toast.makeText(
             context,

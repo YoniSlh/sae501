@@ -56,6 +56,8 @@ dependencies {
     implementation("androidx.room:room-runtime:2.5.0")
     ksp("androidx.room:room-compiler:2.5.0")
 
+    implementation("com.google.mlkit:object-detection:16.0.0")
+
     // Dagger dependencies
     implementation("com.google.dagger:dagger:2.51.1")
     ksp("com.google.dagger:dagger-compiler:2.51.1")
@@ -84,4 +86,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Objet detection EfficentDet
+    implementation("org.tensorflow:tensorflow-lite:2.10.0")
+
+    implementation ("org.pytorch:pytorch_android:1.10.0")
+    implementation ("org.pytorch:pytorch_android_torchvision:1.10.0")
 }
+
