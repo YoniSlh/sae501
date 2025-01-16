@@ -111,8 +111,10 @@ fun processImage(bitmap: Bitmap, context: Context, model: Module?): Pair<Bitmap,
     }
 
     return try {
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
+
         val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
-            bitmap,
+            resizedBitmap,
             TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
             TensorImageUtils.TORCHVISION_NORM_STD_RGB
         )
@@ -134,7 +136,6 @@ fun processImage(bitmap: Bitmap, context: Context, model: Module?): Pair<Bitmap,
 
         val result = DetectionResult(predictedLabel, confidence, left, top, right, bottom)
         val processedBitmap = drawBoundingBox(bitmap, result)
-
         val imagePath = saveBitmapToFile(context, processedBitmap)
 
         val scannedObject = ScannedObject(
@@ -186,9 +187,11 @@ fun HomeScreen() {
     val getPhotoResult = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val imageBitmap = result.data?.extras?.get("data") as? Bitmap
+
             if (imageBitmap != null) {
-                processImage(imageBitmap, context, model)?.let { (bitmap, result) ->
-                    capturedBitmap = bitmap
+                val resizedBitmap = Bitmap.createScaledBitmap(imageBitmap, 512, 512, true)
+                processImage(resizedBitmap, context, model)?.let { (processedBitmap, result) ->
+                    capturedBitmap = processedBitmap
                     detectionResult = result
                 }
             } else {
@@ -202,11 +205,11 @@ fun HomeScreen() {
             val imageUri: Uri? = result.data?.data
             if (imageUri != null) {
                 try {
-                    val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)?.let {
-                        Bitmap.createScaledBitmap(it, 512, 512, true)
-                    }
+                    val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+
                     if (bitmap != null) {
-                        processImage(bitmap, context, model)?.let { (processedBitmap, result) ->
+                        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
+                        processImage(resizedBitmap, context, model)?.let { (processedBitmap, result) ->
                             capturedBitmap = processedBitmap
                             detectionResult = result
                         }
